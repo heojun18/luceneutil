@@ -34,9 +34,14 @@ WIKI_MEDIUM_DOCS_COUNT = 33332620
 # cc news dataset
 CC_NEWS_DOCS_LINE_FILE = '%s/data/CC-NEWS-2017-01.txt' % BASE_DIR
 CC_NEWS_DOCS_COUNT = 2691261
+# micro dataset
+MICRO_10K_DOCS_LINE_FILE = '%s/data/micro-10k.txt' % BASE_DIR
+MICRO_10K_DOCS_COUNT = 10000
 
 # trec query (trec 2005 efficiency)
 TREC_TASKS_FILE = '%s/tasks/trec.tasks' % BENCH_BASE_DIR
+# micro 1k query 
+MICRO_10K_TASKS_FILE = '%s/tasks/micro10k.tasks' % BENCH_BASE_DIR
 
 #WIKI_MEDIUM_TASKS_10MDOCS_FILE = '%s/tasks/wikimedium.10M.tasks' % BENCH_BASE_DIR
 WIKI_MEDIUM_TASKS_10MDOCS_FILE = '%s/tasks/wikimedium.10M.nostopwords.tasks' % BENCH_BASE_DIR

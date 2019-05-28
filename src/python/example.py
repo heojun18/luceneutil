@@ -36,5 +36,5 @@ if __name__ == '__main__':
                   index = index)
 
   # start the benchmark - this can take long depending on your index and machines
-  comp.benchmark("base:2u")
+  comp.benchmark("basevs2u")
   
