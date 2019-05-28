@@ -37,6 +37,8 @@ WIKI_MEDIUM_1M = Data('wikimedium1m', constants.WIKI_MEDIUM_DOCS_LINE_FILE, 1000
 WIKI_MEDIUM_10K = Data('wikimedium10k', constants.WIKI_MEDIUM_DOCS_LINE_FILE, 10000, constants.WIKI_MEDIUM_TASKS_1MDOCS_FILE)
 WIKI_MEDIUM_500K = Data('wikimedium500k', constants.WIKI_MEDIUM_DOCS_LINE_FILE, 500000, constants.WIKI_MEDIUM_TASKS_1MDOCS_FILE)
 WIKI_MEDIUM_2M = Data('wikimedium2m', constants.WIKI_MEDIUM_DOCS_LINE_FILE, 2000000, constants.WIKI_MEDIUM_TASKS_1MDOCS_FILE)
+# CC-NEWS
+CC_NEWS_ALL = Data('ccnewsall', constants.CC_NEWS_DOCS_LINE_FILE, constants.CC_NEWS_DOCS_COUNT, constants.TREC_TASKS_FILE)
 
 MEME_ALL = Data('memeall',
                 '/x/lucene/data/memetracker/lines.txt',
@@ -50,7 +52,8 @@ WIKI_BIG_1M = Data('wikibig1m', constants.WIKI_BIG_DOCS_LINE_FILE, 1000000, cons
 
 EURO_MEDIUM = Data('euromedium', constants.EUROPARL_MEDIUM_DOCS_LINE_FILE, 5000000, constants.EUROPARL_MEDIUM_TASKS_FILE)
 
-DATA = {'wikimediumall': WIKI_MEDIUM_ALL,
+DATA = {'ccnewsall' : CC_NEWS_ALL,
+        'wikimediumall': WIKI_MEDIUM_ALL,
         'wikimedium10m' : WIKI_MEDIUM_10M,
         'wikimedium1m' : WIKI_MEDIUM_1M,
         'wikimedium500k' : WIKI_MEDIUM_500K,
@@ -284,9 +287,12 @@ class Competition(object):
                # Pass fixed randomSeed so separate runs are comparable (pick the same tasks):
                randomSeed=None,
                benchSearch=True,
-               taskCountPerCat = 1,
-               taskRepeatCount = 20,
-               jvmCount = 20):
+               taskCountPerCat = 100,
+               #taskCountPerCat = 1,
+               taskRepeatCount = 1,
+               #taskRepeatCount = 20,
+               jvmCount = 1):
+               #jvmCount = 20):
     self.cold = cold
     self.competitors = []
     self.indices = []

@@ -31,6 +31,13 @@ if 'BENCH_BASE_DIR' not in globals():
 WIKI_MEDIUM_DOCS_LINE_FILE = '%s/data/enwiki-20120502-lines-1k.txt' % BASE_DIR
 WIKI_MEDIUM_DOCS_COUNT = 33332620
 
+# cc news dataset
+CC_NEWS_DOCS_LINE_FILE = '%s/data/CC-NEWS-2017-01.txt' % BASE_DIR
+CC_NEWS_DOCS_COUNT = 2691261
+
+# trec query (trec 2005 efficiency)
+TREC_TASKS_FILE = '%s/tasks/trec.tasks' % BENCH_BASE_DIR
+
 #WIKI_MEDIUM_TASKS_10MDOCS_FILE = '%s/tasks/wikimedium.10M.tasks' % BENCH_BASE_DIR
 WIKI_MEDIUM_TASKS_10MDOCS_FILE = '%s/tasks/wikimedium.10M.nostopwords.tasks' % BENCH_BASE_DIR
 #WIKI_MEDIUM_TASKS_1MDOCS_FILE = '%s/tasks/wikimedium.1M.tasks' % BENCH_BASE_DIR
@@ -71,12 +78,13 @@ if 'JAVA_EXE' not in globals():
 if 'JAVAC_EXE' not in globals():
   JAVAC_EXE = 'javac'
 if 'JAVA_COMMAND' not in globals():
-  JAVA_COMMAND = '%s -server -Xms2g -Xmx2g -XX:-TieredCompilation -XX:+HeapDumpOnOutOfMemoryError -Xbatch' % JAVA_EXE
+  #JAVA_COMMAND = '%s -server -Xms2g -Xmx2g -XX:-TieredCompilation -XX:+HeapDumpOnOutOfMemoryError -Xbatch' % JAVA_EXE
+  JAVA_COMMAND = '%s -server -Xms10g -Xmx10g -XX:-TieredCompilation -XX:+HeapDumpOnOutOfMemoryError -Xbatch' % JAVA_EXE
 else:
   print('use java command %s' % JAVA_COMMAND)
 
 JRE_SUPPORTS_SERVER_MODE = True
-INDEX_NUM_THREADS = 1
+INDEX_NUM_THREADS = 8
 SEARCH_NUM_THREADS = 2
 # geonames: http://download.geonames.org/export/dump/
 
