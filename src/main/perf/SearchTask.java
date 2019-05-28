@@ -122,12 +122,14 @@ final class SearchTask extends Task {
   @Override
   public void go(IndexState state) throws IOException {
     //System.out.println("go group=" + this.group + " single=" + singlePassGroup + " xxx=" + xxx + " this=" + this);
+    //System.out.println("go group=" + this.group + " single=" + singlePassGroup + " this=" + this);
     final IndexSearcher searcher = state.mgr.acquire();
 
-    //System.out.println("GO query=" + q);
+    //System.out.println("[arcj] Go::start query=" + q);
 
     try {
       if (doHilite) {
+				//System.out.println("[arcj] Go::doHilite");
         if (state.fastHighlighter != null) {
           fieldQuery = state.fastHighlighter.getFieldQuery(q, searcher.getIndexReader());
         } else if (state.useHighlighter) {
@@ -140,7 +142,9 @@ final class SearchTask extends Task {
       if (group != null) {
         if (singlePassGroup) {
           final BlockGroupingCollector c = new BlockGroupingCollector(Sort.RELEVANCE, 10, true, searcher.createWeight(searcher.rewrite(state.groupEndQuery), ScoreMode.COMPLETE_NO_SCORES, 1));
-          searcher.search(q, c);
+					//System.out.println("[arcj] Go::singlePassGroup ");
+					//System.out.println("[arcj] Go::search 1: " + q + " / " + c);
+          searcher.search(q, c);	// arcj: (query, collector)
           groupsResultBlock = c.getTopGroups(Sort.RELEVANCE, 0, 0, 10);
 
           if (doHilite) {
@@ -148,7 +152,7 @@ final class SearchTask extends Task {
           }
 
         } else {
-          //System.out.println("GB: " + group);
+          //System.out.println("[arcj] Go::no singlePassGroup " + group);
           final FirstPassGroupingCollector<BytesRef> c1 = new FirstPassGroupingCollector(new TermGroupSelector(group), Sort.RELEVANCE, 10);
 
           final Collector c;
@@ -163,11 +167,13 @@ final class SearchTask extends Task {
             c = c1;
           }
           
+					//System.out.println("[arcj] Go::search 2: " + q + " / " + c);
           searcher.search(q, c);
 
           final Collection<SearchGroup<BytesRef>> topGroups = c1.getTopGroups(0);
           if (topGroups != null) {
             final TopGroupsCollector<BytesRef> c2 = new TopGroupsCollector<>(new TermGroupSelector(group), topGroups, Sort.RELEVANCE, Sort.RELEVANCE, 10, true);
+						//System.out.println("[arcj] Go::search 3: " + q + " / " + c2);
             searcher.search(q, c2);
             groupsResultTerms = c2.getTopGroups(0);
             if (allGroupsCollector != null) {
@@ -180,6 +186,7 @@ final class SearchTask extends Task {
           }
         }
       } else if (!facetRequests.isEmpty()) {
+				//System.out.println("[arcj] Go::facetRequests ");
         // TODO: support sort, filter too!!
         // TODO: support other facet methods
         if (doDrillSideways) {
@@ -210,7 +217,8 @@ final class SearchTask extends Task {
         } else {
           facetResults = new ArrayList<FacetResult>();
           FacetsCollector fc = new FacetsCollector();
-          hits = FacetsCollector.search(searcher, q, 10, fc);
+					//System.out.println("[arcj] Go::search 4 " + searcher + " / " + q + " / " + fc);
+          hits = FacetsCollector.search(searcher, q, 10, fc); // arcj: (searcher, query, num, collector) 
           long t0 = System.nanoTime();
           for(String request : facetRequests) {
             if (request.startsWith("range:")) {
@@ -250,11 +258,18 @@ final class SearchTask extends Task {
           getFacetResultsMsec = (System.nanoTime() - t0)/1000000.0;
         }
       } else if (s == null) {
-        hits = searcher.search(q, topN);
+				//System.out.println("[arcj] Go::s==null ");
+        hits = searcher.search(q, topN); //
+				//System.out.println("[arcj] Go::search 5 " + q + " / " + topN + " / " + hits);
+				//for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
+				//	    System.out.println(ste);
+				//}
         if (doHilite) {
           hilite(hits, state, searcher, q);
         }
       } else {
+				//System.out.println("[arcj] Go::Else ");
+				//System.out.println("[arcj] Go::search 6 " + q + " / " + topN);
         hits = searcher.search(q, topN, s);
         if (doHilite) {
           hilite(hits, state, searcher, q);
@@ -273,6 +288,7 @@ final class SearchTask extends Task {
         */
       }
       if (hits != null) {
+				//System.out.println("[arcj] Go::hits " + hits);
         totalHitCount = hits.totalHits;
 
         if (doStoredLoads) {
@@ -283,6 +299,7 @@ final class SearchTask extends Task {
         }
 
       } else if (groupsResultBlock != null) {
+				//System.out.println("[arcj] Go::groupsResultsBlock " + groupsResultBlock);
         totalHitCount = new TotalHits(groupsResultBlock.totalHitCount, TotalHits.Relation.EQUAL_TO);
       }
     } catch (Throwable t) {
@@ -520,8 +537,10 @@ final class SearchTask extends Task {
           out.println("  doc=" + LineFileDocs.idToInt(searcher.doc(hit.doc).get("id")) + " " + s.getSort()[0].getField() + "=" + vs);
         }
       } else if (hits != null) {
+
         for(ScoreDoc hit : hits.scoreDocs) {
           out.println("  doc=" + LineFileDocs.idToInt(searcher.doc(hit.doc).get("id")) + " score=" + hit.score);
+          //System.out.println("[arcj] SearchTask::printresults  doc=" + LineFileDocs.idToInt(searcher.doc(hit.doc).get("id")) + " score=" + hit.score);
         }
       }
 

@@ -131,6 +131,11 @@ public class SearchPerfTest {
   }
 
   private static void _main(String[] clArgs) throws Exception {
+    System.out.println("[arcj] SearchPerfTest:_main");
+    final long startNanos0 = System.nanoTime();
+
+		// arcj: Initialization(open)
+    final long startNanosInit1 = System.nanoTime();
 
     // args: dirImpl indexPath numThread numIterPerThread
     // eg java SearchPerfTest /path/to/index 4 100
@@ -181,8 +186,14 @@ public class SearchPerfTest {
       */
 
     dir0 = od.open(Paths.get(dirPath));
+		// arcj: Initialization(open)
+    final long endNanosInit1 = System.nanoTime();
+    System.out.println("[arcj] Breakdown::Initialization(Open): " + ((endNanosInit1 - startNanosInit1)/1000000.0) + " msec total");
 
     // TODO: NativeUnixDir?
+
+		// arcj: Initialization(set config)
+    final long startNanosInit2 = System.nanoTime();
 
     final String analyzer = args.getString("-analyzer");
     final String tasksFile = args.getString("-taskSource");
@@ -249,8 +260,15 @@ public class SearchPerfTest {
     if (recacheFilterDeletes) {
       throw new UnsupportedOperationException("recacheFilterDeletes was deprecated");
     }
+		// arcj: Initialization(set config)
+    final long endNanosInit2 = System.nanoTime();
+    System.out.println("[arcj] Breakdown::Initialization(setConfig): " + ((endNanosInit2 - startNanosInit2)/1000000.0) + " msec total");
 
+		
     if (args.getFlag("-nrt")) {
+			System.out.println("[arcj] Near Realtime Search");
+			// arcj: Near Realtime Search
+			final long startNanosNRT = System.nanoTime();
       // TODO: get taxoReader working here too
       // TODO: factor out & share this CL processing w/ Indexer
       final int indexThreadCount = args.getInt("-indexThreadCount");
@@ -383,23 +401,47 @@ public class SearchPerfTest {
       reopenThread.setPriority(4+Thread.currentThread().getPriority());
       reopenThread.start();
 
-    } else {
+			// arcj: Near Realtime Search
+			final long endNanosNRT = System.nanoTime();
+			System.out.println("[arcj] Breakdown::NRT: " + ((endNanosNRT - startNanosNRT)/1000000.0) + " msec total");
+
+		} else {
+			// arcj: Directory Open
+			final long startNanosOpen = System.nanoTime();
+
       dir = dir0;
       writer = null;
       final DirectoryReader reader;
+			System.out.println("[arcj] Non Near Realtime Search: " + dir);
+
       if (commit != null && commit.length() > 0) {
         System.out.println("Opening searcher on commit=" + commit);
-        reader = DirectoryReader.open(PerfUtils.findCommitPoint(commit, dir));
+				// arcj: Open (core part)
+				//final long startNanos1 = System.nanoTime();
+				reader = DirectoryReader.open(PerfUtils.findCommitPoint(commit, dir));
+				System.out.println("[arcj] commit & dir: " + commit + " " + dir);
+				//final long endNanos1 = System.nanoTime();
+				//System.out.println("\n" + "[arcj] arcj 1:" + ((endNanos1 - startNanos1)/1000000.0) + " msec total");
       } else {
         // open last commit
         reader = DirectoryReader.open(dir);
       }
+			// arcj: Directory Open
+			final long endNanosOpen = System.nanoTime();
+			System.out.println("[arcj] Breakdown::DirOpen: " + ((endNanosOpen - startNanosOpen)/1000000.0) + " msec total");
+
+			// arcj: Searcher
+			final long startNanosSearcher = System.nanoTime();
       IndexSearcher s = new IndexSearcher(reader);
       s.setQueryCache(null); // don't bench the cache
       s.setSimilarity(sim);
       System.out.println("maxDoc=" + reader.maxDoc() + " numDocs=" + reader.numDocs() + " %tg deletes=" + (100.*reader.maxDoc()/reader.numDocs()));
       
       mgr = new SingleIndexSearcher(s);
+			// arcj: Searcher
+			// Just read indexes in the directory until here
+			final long endNanosSearcher = System.nanoTime();
+			System.out.println("[arcj] Breakdown::CreateSearcher: " + ((endNanosSearcher - startNanosSearcher)/1000000.0) + " msec total");
     }
 
     System.out.println((System.currentTimeMillis() - tSearcherStart) + " msec to init searcher/NRT");
@@ -415,6 +457,9 @@ public class SearchPerfTest {
 
     //System.out.println("searcher=" + searcher);
 
+		// arcj: Processing 1 (facet)
+		final long startNanosProcessing1 = System.nanoTime();
+
     FacetsConfig facetsConfig = new FacetsConfig();
     facetsConfig.setHierarchical("Date.taxonomy", true);
 
@@ -424,6 +469,7 @@ public class SearchPerfTest {
     // facet dim name -> facet method
     final Map<String,Integer> facetDimMethods = new HashMap<>();
     if (args.hasArg("-facets")) {
+			System.out.println("[arcj] Facets option");
       for(String arg : args.getStrings("-facets")) {
         String[] dims = arg.split(";");
         String facetGroupField;
@@ -485,6 +531,15 @@ public class SearchPerfTest {
 
     final TaskSource tasks;
 
+		// arcj: Processing 1 (facet)
+		// Don't consider this part
+		final long endNanosProcessing1 = System.nanoTime();
+		System.out.println("[arcj] Breakdown::Processing1(setParser): " + ((endNanosProcessing1 - startNanosProcessing1)/1000000.0) + " msec total");
+
+
+		// arcj: LocalTaskSource
+		final long startNanosLTS = System.nanoTime();
+
     if (tasksFile.startsWith("server:")) {
       int idx = tasksFile.indexOf(':', 8);
       if (idx == -1) {
@@ -500,11 +555,19 @@ public class SearchPerfTest {
       // Load the tasks from a file:
       final int taskRepeatCount = args.getInt("-taskRepeatCount");
       final int numTaskPerCat = args.getInt("-tasksPerCat");
+			// arcj 2
+    	//final long startNanos2 = System.nanoTime();
       tasks = new LocalTaskSource(indexState, taskParser, tasksFile, staticRandom, random, numTaskPerCat, taskRepeatCount, doPKLookup);
+			//final long endNanos2 = System.nanoTime();
+			//System.out.println("\n" + "[arcj] arcj 2: " + ((endNanos2 - startNanos2)/1000000.0) + " msec total");
       System.out.println("Task repeat count " + taskRepeatCount);
       System.out.println("Tasks file " + tasksFile);
       System.out.println("Num task per cat " + numTaskPerCat);
     }
+
+		// arcj: LocalTaskSource(load task)
+		final long endNanosLTS = System.nanoTime();
+		System.out.println("[arcj] Breakdown::LocalTaskSource(loadTask): " + ((endNanosLTS - startNanosLTS)/1000000.0) + " msec total");
 
     args.check();
 
@@ -514,13 +577,17 @@ public class SearchPerfTest {
     final TaskThreads taskThreads = new TaskThreads(tasks, indexState, searchThreadCount);
     Thread.sleep(10);
 
-    final long startNanos = System.nanoTime();
+    System.out.println("\n" + "[arcj] SearchPerfTest total start");
+    final long startNanosSearch = System.nanoTime();
     taskThreads.start();
     taskThreads.finish();
-    final long endNanos = System.nanoTime();
+    final long endNanosSearch = System.nanoTime();
+    System.out.println("\n" + "[arcj] SearchPerfTest total end");
 
-    System.out.println("\n" + ((endNanos - startNanos)/1000000.0) + " msec total");
+		System.out.println("[arcj] Breakdown::Search: " + ((endNanosSearch - startNanosSearch)/1000000.0) + " msec total");
 
+		// arcj: Processing 2 (print results)
+		final long startNanosProcessing2 = System.nanoTime();
     final List<Task> allTasks = tasks.getAllTasks();
 
     PrintStream out = new PrintStream(logFile);
@@ -535,9 +602,12 @@ public class SearchPerfTest {
       out.println("\nResults for " + allTasks.size() + " tasks:");
 
       boolean fail = false;
+
       for(final Task task : allTasks) {
+				//System.out.println("[arcj] Print all Tasks for checksum:  " + task);
         if (verifyCheckSum) {
-          final Task other = tasksSeen.get(task);
+					//System.out.println("[arcj] VerifyCheckSum");
+					final Task other = tasksSeen.get(task);
           if (other != null) {
             if (task.checksum() != other.checksum()) {
               System.out.println("\nTASK:");
@@ -548,7 +618,7 @@ public class SearchPerfTest {
               //throw new RuntimeException("task " + task + " hit different checksums: " + task.checksum() + " vs " + other.checksum() + " other=" + other);
             }
           } else {
-            tasksSeen.put(task, task);
+            tasksSeen.put(task, task); // BooleanQuery::equalsTo
           }
         }
         out.println("\nTASK: " + task);
@@ -573,7 +643,12 @@ public class SearchPerfTest {
       // Don't actually commit any index changes:
       writer.rollback();
     }
+		// arcj: Processing 2
+		final long endNanosProcessing2 = System.nanoTime();
+		System.out.println("[arcj] Breakdown::Processing2(results): " + ((endNanosProcessing2 - startNanosProcessing2)/1000000.0) + " msec total");
 
+    final long endNanos0 = System.nanoTime();
+    System.out.println("[arcj] Breakdown::Main total " + ((endNanos0 - startNanos0)/1000000.0) + " msec total");
     dir.close();
 
     if (printHeap) {

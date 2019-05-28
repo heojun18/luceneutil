@@ -81,6 +81,7 @@ public class TaskThreads {
 
 			try {
 				while (!stop.get()) {
+					//System.out.println("[arcj] Task Run Start");
 					final Task task = tasks.nextTask();
 					if (task == null) {
 						// Done

@@ -319,6 +319,10 @@ public class LineFileDocs implements Closeable {
     final ParsePosition datePos = new ParsePosition(0);
 
     DocState(boolean storeBody, boolean tvsBody, boolean bodyPostingsOffsets, boolean addDVFields) {
+			//System.out.println("[arcj] DocState storeBody = " + storeBody);
+			//System.out.println("[arcj] DocState tvsBody = " + tvsBody);
+			//System.out.println("[arcj] DocState bodyPostingsOffsets = " + bodyPostingsOffsets);
+			//System.out.println("[arcj] DocState addDVFields = " + addDVFields);
       doc = new Document();
       
       title = new StringField("title", "", Field.Store.NO);
@@ -363,6 +367,7 @@ public class LineFileDocs implements Closeable {
 
       body = new Field("body", "", bodyFieldType);
       doc.add(body);
+			//System.out.println("[arcj] body1 = " + body);
 
       id = new Field("id", "", StringField.TYPE_STORED);
       doc.add(id);
@@ -381,6 +386,7 @@ public class LineFileDocs implements Closeable {
 
       timeSec = new IntPoint("timesecnum", 0);
       doc.add(timeSec);
+			//System.out.println("[arcj] doc1 = " + doc);
     }
   }
 
@@ -427,6 +433,7 @@ public class LineFileDocs implements Closeable {
     if (isBinary) {
 
       ByteBuffer buffer = nextDocs.get();
+			//System.out.println("[arcj] binary buffer = " + buffer);
       if (buffer == null || buffer.position() == buffer.limit()) {
         /*
         System.out.println("  prev buffer=" + buffer);
@@ -438,6 +445,7 @@ public class LineFileDocs implements Closeable {
         Object o;
         try {
           o = queue.take();
+					//System.out.println("[arcj] object1 = " + o);
         } catch (InterruptedException ie) {
           Thread.currentThread().interrupt();
           throw new RuntimeException(ie);
@@ -464,6 +472,7 @@ public class LineFileDocs implements Closeable {
 
       char[] bodyChars = new char[bodyLenBytes];
       int bodyLenChars = UnicodeUtil.UTF8toUTF16(bytes, buffer.position()+titleLenBytes, bodyLenBytes, bodyChars);
+			//System.out.println("[arcj] bodyLenChars1 = " + bodyLenChars);
       body = new String(bodyChars, 0, bodyLenChars);
       buffer.position(buffer.position() + titleLenBytes + bodyLenBytes);
 
@@ -473,9 +482,11 @@ public class LineFileDocs implements Closeable {
       line = null;
       
     } else {
+			//System.out.println("[arcj] not binary");
       Object o;
       try {
         o = queue.take();
+				//System.out.println("[arcj] object2 = " + o);
       } catch (InterruptedException ie) {
         Thread.currentThread().interrupt();
         throw new RuntimeException(ie);
@@ -499,12 +510,14 @@ public class LineFileDocs implements Closeable {
       }
 
       body = line.substring(1+spot2, spot3);
+			//System.out.println("[arcj] body2 = " + body);
 
       title = line.substring(0, spot);
       
       final String dateString = line.substring(1+spot, spot2);
       doc.date.setStringValue(dateString);
       doc.datePos.setIndex(0);
+      //System.out.println("DATE-String: " + dateString);
       final Date date = doc.dateParser.parse(dateString, doc.datePos);
       if (date == null) {
         System.out.println("FAILED: " + dateString);
@@ -622,10 +635,13 @@ public class LineFileDocs implements Closeable {
         }
         */
       }
-      return facetsConfig.build(taxoWriter, doc2);
-    } else if (doClone) {
-      return cloneDoc(doc.doc);
-    } else {
+			//System.out.println("[arcj] end nextDoc3 = " + doc2);
+			return facetsConfig.build(taxoWriter, doc2);
+		} else if (doClone) {
+			//System.out.println("[arcj] end nextDoc4 = " + doc.doc);
+			return cloneDoc(doc.doc);
+		} else {
+			//System.out.println("[arcj] end nextDoc5 = " + doc.doc);
       return doc.doc;
     }
   }

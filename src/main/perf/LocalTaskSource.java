@@ -44,9 +44,13 @@ class LocalTaskSource implements TaskSource {
   public LocalTaskSource(IndexState indexState, TaskParser taskParser, String tasksFile,
                          Random staticRandom, Random random, int numTaskPerCat, int taskRepeatCount, boolean doPKLookup) throws IOException, ParseException {
 
+		//final long startNanos1 = System.nanoTime();
     final List<Task> loadedTasks = loadTasks(taskParser, tasksFile);
+		System.out.println("[arcj] LocalTaskSource: " + taskParser + " /// " + tasksFile);
     Collections.shuffle(loadedTasks, staticRandom);
     final List<Task> prunedTasks = pruneTasks(loadedTasks, numTaskPerCat);
+		//final long endNanos1 = System.nanoTime();
+    //System.out.println("\n" + "[arcj] Breakdown::LocalTaskSource:Pruning " + ((endNanos1 - startNanos1)/1000000.0) + " msec total");
 
     final IndexSearcher searcher = indexState.mgr.acquire();
     final int maxDoc;
@@ -83,7 +87,9 @@ class LocalTaskSource implements TaskSource {
         tasks.add(task.clone());
       }
     }
-    System.out.println("TASK LEN=" + tasks.size());
+    System.out.println("TASK LEN=" + tasks.size() + " /// " + tasks);
+		//for(int z=0;iter<tasks.size();iter++) {
+		//}
   }
 
   @Override

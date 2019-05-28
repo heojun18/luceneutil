@@ -126,6 +126,7 @@ public final class Indexer {
 
   private static void _main(String[] clArgs) throws Exception {
 
+		System.out.println("[arcj] Start Indexing Process");
     Args args = new Args(clArgs);
 
     // EG: -facets taxonomy;Date -facets taxonomy;Month -facets sortedset:facetGroupField;Month

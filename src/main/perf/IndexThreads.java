@@ -172,6 +172,7 @@ class IndexThreads {
 
     @Override
     public void run() {
+			System.out.println("[arcj] IndexThreads");
       try {
         final LineFileDocs.DocState docState = docs.newDocState();
         final Field idField = docState.id;
@@ -218,7 +219,7 @@ class IndexThreads {
           }
 
           // Add docs in blocks:
-          
+					//System.out.println("[arcj] numTotalDocs = " + numTotalDocs);
           final BytesRef[] groupBlocks;
           if (numTotalDocs >= 5000000) {
             groupBlocks = group1M;
@@ -231,6 +232,7 @@ class IndexThreads {
 
           while (!stop.get()) {
             final int groupCounter = groupBlockIndex.getAndIncrement();
+						//System.out.println("[arcj] groupCounter = " + groupCounter + " / " + groupBlocks.length);
             if (groupCounter >= groupBlocks.length) {
               break;
             }
@@ -243,8 +245,10 @@ class IndexThreads {
             } else {
               numDocs = ((int) ((1+groupCounter)*docsPerGroupBlock)) - ((int) (groupCounter*docsPerGroupBlock));
             }
+						//System.out.println("[arcj] groupBlocks = " + groupBlocks[groupCounter]);
             groupBlockField.setBytesValue(groupBlocks[groupCounter]);
 
+						//System.out.println("[arcj] start iterator ");
             w.addDocuments(new Iterable<Document>() {
                 @Override
                 public Iterator<Document> iterator() {
@@ -262,20 +266,24 @@ class IndexThreads {
 
                         try {
                           doc = docs.nextDoc(docState);
+													//System.out.println("[arcj] hasNext.doc1 = " + doc);
                         } catch (IOException ioe) {
                           throw new RuntimeException(ioe);
                         }
                         if (doc == null) {
+													//System.out.println("[arcj] doc is null = " + doc);
                           return false;
                         }
 
                         if (upto == numDocs) {
                           // Sneaky: we remove it down below, so that in the not-cloned case we don't accumulate this field:
                           doc.add(groupEndField);
+													//System.out.println("[arcj] hasNext.groupEndField = " + groupEndField);
                         }
 
                         final int id = LineFileDocs.idToInt(idField.stringValue());
-                        if (id >= numTotalDocs) {
+												//System.out.println("[arcj] hasNext.id = " + id);
+												if (id >= numTotalDocs) {
                           throw new IllegalStateException();
                         }
                         if (((1+id) % 10000) == 0) {
@@ -305,6 +313,7 @@ class IndexThreads {
                   };
                 }
               });
+						//System.out.println("[arcj] end iterator ");
 
             docState.doc.removeField("groupend");
           }
@@ -313,10 +322,12 @@ class IndexThreads {
           int threadCount = 0;
           while (!stop.get()) {
             final Document doc = docs.nextDoc(docState);
+						//System.out.println("[arcj] nextDoc.doc2 = " + doc);
             if (doc == null) {
               break;
             }
             final int id = LineFileDocs.idToInt(idField.stringValue());
+						//System.out.println("[arcj] nextDoc.id2 = " + doc);
             if (numTotalDocs != -1 && id >= numTotalDocs) {
               break;
             }
