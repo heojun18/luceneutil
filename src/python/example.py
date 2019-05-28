@@ -25,16 +25,16 @@ if __name__ == '__main__':
 
   index = comp.newIndex('trunk', sourceData)
   # create a competitor named baseline with sources in the ../trunk folder
-  comp.competitor('baseline', 'trunk',
+  comp.competitor('base', 'trunk',
                   index = index)
 
   # use the same index here
   # create a competitor named my_modified_version with sources in the ../patch folder
   # note that we haven't specified an index here, luceneutil will automatically use the index from the base competitor for searching 
   # while the codec that is used for running this competitor is taken from this competitor.
-  comp.competitor('my_modified_version', 'patch',
+  comp.competitor('2u', 'patch',
                   index = index)
 
   # start the benchmark - this can take long depending on your index and machines
-  comp.benchmark("trunk_vs_patch")
+  comp.benchmark("base:2u")
   
